@@ -1,0 +1,15 @@
+{
+  "temperature_unit": "celsius",
+  "wind_unit": "km/h",
+  "update_interval_minutes": 60,
+  "auto_update_enabled": false,
+  "cache_duration_minutes": 30,
+  "notifications_enabled": true,
+  "rain_alert_enabled": true,
+  "extreme_weather_alert": true,
+  "rain_threshold": 30,
+  "latitude": 44.4268,
+  "longitude": 26.1025,
+  "forecast_days": 7,
+  "compact_mode": false
+}
