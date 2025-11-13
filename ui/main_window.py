@@ -10,6 +10,11 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QIcon
 import json
 from pathlib import Path
+from core.weather_service import get_weather_forecast
+from widgets.weather_chart import WeatherChartWidget
+from PyQt5.QtWidgets import QTableWidgetItem
+from datetime import datetime
+
 
 class MainWindow(QMainWindow):
     """Fereastra principală a aplicației WeatherScheduler"""
