@@ -19,7 +19,6 @@ class SettingsDialog(QDialog):
     - Locație pentru date meteo
     """
     
-    # Semnal emis când setările sunt salvate
     settings_changed = pyqtSignal(dict)
     
     def __init__(self, parent=None):
@@ -44,12 +43,10 @@ class SettingsDialog(QDialog):
         units_layout = QFormLayout()
         units_group.setLayout(units_layout)
         
-        # Selector temperatură
         self.temp_unit_combo = QComboBox()
         self.temp_unit_combo.addItems(["Celsius (°C)", "Fahrenheit (°F)"])
         units_layout.addRow("Temperatură:", self.temp_unit_combo)
         
-        # Selector viteză vânt
         self.wind_unit_combo = QComboBox()
         self.wind_unit_combo.addItems(["km/h", "m/s", "mph"])
         units_layout.addRow("Viteză vânt:", self.wind_unit_combo)
@@ -61,20 +58,17 @@ class SettingsDialog(QDialog):
         update_layout = QFormLayout()
         update_group.setLayout(update_layout)
         
-        # Interval actualizare automată
         self.update_interval_spin = QSpinBox()
         self.update_interval_spin.setMinimum(5)
-        self.update_interval_spin.setMaximum(1440)  # 24 ore
+        self.update_interval_spin.setMaximum(1440)
         self.update_interval_spin.setValue(60)
         self.update_interval_spin.setSuffix(" minute")
         update_layout.addRow("Interval verificare:", self.update_interval_spin)
         
-        # Checkbox pentru actualizare automată
         self.auto_update_check = QCheckBox("Activează verificarea automată")
         self.auto_update_check.setChecked(True)
         update_layout.addRow("", self.auto_update_check)
         
-        # Durata cache
         self.cache_duration_spin = QSpinBox()
         self.cache_duration_spin.setMinimum(10)
         self.cache_duration_spin.setMaximum(120)
@@ -109,6 +103,7 @@ class SettingsDialog(QDialog):
         self.rain_threshold_spin.setMaximum(100)
         self.rain_threshold_spin.setValue(30)
         self.rain_threshold_spin.setSuffix("%")
+        self.rain_threshold_spin.setMinimumWidth(80) # <-- MODIFICAT AICI (LĂȚIME MĂRITĂ)
         threshold_layout.addWidget(threshold_label)
         threshold_layout.addWidget(self.rain_threshold_spin)
         threshold_layout.addStretch()
@@ -116,25 +111,14 @@ class SettingsDialog(QDialog):
         
         layout.addWidget(notif_group)
         
-        # === SECȚIUNEA LOCAȚIE ===
+        # === SECȚIUNEA LOCAȚIE (MODIFICATĂ) ===
         location_group = QGroupBox("📍 Locație")
         location_layout = QFormLayout()
         location_group.setLayout(location_layout)
         
-        # Input latitudine
-        self.latitude_input = QLineEdit()
-        self.latitude_input.setPlaceholderText("ex: 44.4268")
-        location_layout.addRow("Latitudine:", self.latitude_input)
-        
-        # Input longitudine
-        self.longitude_input = QLineEdit()
-        self.longitude_input.setPlaceholderText("ex: 26.1025")
-        location_layout.addRow("Longitudine:", self.longitude_input)
-        
-        # Mesaj informativ
-        info_label = QLabel("💡 Default: București (44.4268°N, 26.1025°E)")
-        info_label.setStyleSheet("color: gray; font-size: 11px;")
-        location_layout.addRow("", info_label)
+        self.location_input = QLineEdit()
+        self.location_input.setPlaceholderText("ex: Iași, Bacău, București")
+        location_layout.addRow("Nume Oraș:", self.location_input)
         
         layout.addWidget(location_group)
         
@@ -204,9 +188,8 @@ class SettingsDialog(QDialog):
         self.extreme_weather_check.setChecked(self.settings.get("extreme_weather_alert", True))
         self.rain_threshold_spin.setValue(self.settings.get("rain_threshold", 30))
         
-        # Locație
-        self.latitude_input.setText(str(self.settings.get("latitude", 44.4268)))
-        self.longitude_input.setText(str(self.settings.get("longitude", 26.1025)))
+        # Locație (MODIFICAT)
+        self.location_input.setText(self.settings.get("location_name", "București"))
         
         # Afișare
         self.forecast_days_spin.setValue(self.settings.get("forecast_days", 7))
@@ -215,23 +198,6 @@ class SettingsDialog(QDialog):
     def save_settings(self):
         """Salvează setările și emite semnalul de modificare"""
         try:
-            # Validare coordonate
-            try:
-                latitude = float(self.latitude_input.text())
-                longitude = float(self.longitude_input.text())
-                
-                if not (-90 <= latitude <= 90):
-                    raise ValueError("Latitudinea trebuie să fie între -90 și 90")
-                if not (-180 <= longitude <= 180):
-                    raise ValueError("Longitudinea trebuie să fie între -180 și 180")
-            except ValueError as e:
-                QMessageBox.warning(
-                    self,
-                    "Date invalide",
-                    f"Coordonatele introduse sunt invalide:\n{str(e)}"
-                )
-                return
-                
             # Construim dicționarul cu noile setări
             new_settings = {
                 # Unități
@@ -249,23 +215,18 @@ class SettingsDialog(QDialog):
                 "extreme_weather_alert": self.extreme_weather_check.isChecked(),
                 "rain_threshold": self.rain_threshold_spin.value(),
                 
-                # Locație
-                "latitude": latitude,
-                "longitude": longitude,
+                # Locație (MODIFICAT)
+                "location_name": self.location_input.text().strip(),
                 
                 # Afișare
                 "forecast_days": self.forecast_days_spin.value(),
                 "compact_mode": self.compact_mode_check.isChecked()
             }
             
-            # Salvăm în fișier
             self.settings = new_settings
             self.persist_settings()
             
-            # Emitem semnalul
             self.settings_changed.emit(new_settings)
-            
-            # Închidem dialogul
             self.accept()
             
         except Exception as e:
@@ -306,7 +267,6 @@ class SettingsDialog(QDialog):
         settings_path = Path("resources/settings.json")
         
         try:
-            # Creăm directorul dacă nu există
             settings_path.parent.mkdir(parents=True, exist_ok=True)
             
             with open(settings_path, 'w', encoding='utf-8') as f:
@@ -328,8 +288,7 @@ class SettingsDialog(QDialog):
             "rain_alert_enabled": True,
             "extreme_weather_alert": True,
             "rain_threshold": 30,
-            "latitude": 44.4268,
-            "longitude": 26.1025,
+            "location_name": "București", # (MODIFICAT)
             "forecast_days": 7,
             "compact_mode": False
         }
